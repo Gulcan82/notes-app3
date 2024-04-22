@@ -1,10 +1,20 @@
 import * as fs from 'node:fs'
 import { Note } from '../types/notes'
 
+/**
+ * Represents the raw data structure for storing notes.
+ * to extract the notes from the raw JSON object.
+ */
 type NotesRaw = {
-  notes: Note[]
+  notes: Note[]; // An array containing notes
 }
 
+
+
+/**
+ * Reads all notes from the JSON file and resturns them as an array of Note objects.
+ * @returns {Note[]} Array of notes retrieved from the file.
+ */
 export function getNotes(): Note[] {
   const notesRaw = fs.readFileSync('data/notes.json', 'utf8')
   const notizen = JSON.parse(notesRaw) as NotesRaw
@@ -12,6 +22,12 @@ export function getNotes(): Note[] {
   return array
 }
 
+
+/**
+ * Retrieves a single note by its ID.
+ * @param {number} id - The unique identifier of the note to be retrieved.
+ * @returns {Note | undefined} The note object it found, otherwise undefined.
+ */
 export function getNoteById(id: number): Note | undefined {
 
   const notes = getNotes() 
@@ -20,11 +36,28 @@ export function getNoteById(id: number): Note | undefined {
   return note
 }
 
+
+
+/**
+ * Write a list of notes to a JSON file.
+ *  @param {Note[]} oldNotes The list of notes to be written to the file.
+ */
 export function writeNotesToFile(oldNotes: Note[]): void { 
   const newNotes: NotesRaw = { notes: oldNotes }
   fs.writeFileSync('data/notes.json', JSON.stringify(newNotes))
 }
 
+
+
+
+/**
+ * Adds a new note with the specified title, content, and user to the list of existing notes array.
+ * then writes the updated array of notes to a JSON file.
+ * 
+ * @param {string} title The title of the new note.
+ * @param {string} content The content of the new note.
+ * @param {string} user The user associated with the new note.
+ */
 export function addNote(title: string, content: string, user: string): void {
 
   const oldNotes = getNotes()
@@ -41,6 +74,15 @@ export function addNote(title: string, content: string, user: string): void {
 
 }
 
+/**
+ * Updates an existing note with the specified ID by replacing its title, content, and user,
+ * then writes the updated list of notes to a JSON file.
+ * 
+ * @param {number} id  - The ID of the note to be updated.
+ * @param {string} title The new title for the note.
+ * @param {string} content The new content for the note.
+ * @param  {string} user The new user associated with the note.
+ */
 export function updateNote(id: number, title: string, content: string, user: string): void {
  
   const oldNotes = getNotes()
@@ -55,6 +97,13 @@ export function updateNote(id: number, title: string, content: string, user: str
   writeNotesToFile(filteredNotes)
 }
 
+
+/**
+ * Deletes the note with the specified ID from the list of notes,
+ * then writes the updated array to a JSON file.
+ * 
+ * @param {number} id The ID of the note to be deleted.
+ */
 export function deleteNoteById(id: number): void {
 
   const oldNotes = getNotes()

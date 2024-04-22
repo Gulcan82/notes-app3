@@ -5,6 +5,18 @@ import {hasAuthentication } from '../middleware/auth'
 
 
 export const notesRouter = Router()
+/**
+ * @route POST /notes - Endpoint to add a new note. 
+ * @middleware hasAuthentication - The method requires authentication.
+ * @description Creates a new note with the given title, content, and user from the request body.
+ * @param {Request} req - The request object containing title, content, and user.
+ * @param {Response} res - The resonse object.
+ * @return {void} Responds with a HTTP 204 No Content status upon successful addition of the note.
+ *   - title: string - The title of the note.
+ *   - content: string - The content of the note.
+ *   - user: string - The user associated with the note.
+ * 
+ */
 
 notesRouter.post('/', (req: Request, res: Response) => {
   
@@ -18,6 +30,14 @@ notesRouter.post('/', (req: Request, res: Response) => {
 })
 
 
+/**
+ * @route GET /notes - Endpoint to retrieve notes associated with the authenticated user.
+ * @middleware hasAuthentication - The method requires authentication.
+ * @description Retrieves notes belonging to the authenticated user.
+ * @param {Request} req - The request object.
+ * @param {Response} res - The response object.
+ * @return {void} Responds with a HTTP 200 OK status and an array of notes belonging to the user.
+ */
 notesRouter.get('/', hasAuthentication, (req: Request, res: Response) => {
   const user = req.headers.authorization!
 
@@ -29,7 +49,14 @@ notesRouter.get('/', hasAuthentication, (req: Request, res: Response) => {
 
 })
 
-
+/**
+ * @route GET /notes/:id - Endpoint to retrieve a specific note by ID associated with the authenticated user.
+ * @middleware hasAuthentication - The method requires authentication.
+ * @description Retrieves a note by its ID belonging to the authenticated user.
+ * @param {Request} req - The request object containing the note ID as a parameter.
+ * @param {Response} res - The response object.
+ * @return {void} Responds with a HTTP 200 OK status and the requested note if found, or a HTTP 404 Not Found status if the note does not exist.
+ */
 notesRouter.get('/:id', hasAuthentication, (req: Request, res: Response) => {
 
   const id: number = parseInt(req.params.id)
@@ -45,7 +72,14 @@ notesRouter.get('/:id', hasAuthentication, (req: Request, res: Response) => {
 
  })
 
-
+/**
+ * @route PUT /notes/:id - Endpoint to update a specific note by ID associated with the authenticated user.
+ * @middleware hasAuthentication - The method requires authentication.
+ * @description Updates a note by its ID with the provided title, content, and user, belonging to the authenticated user.
+ * @param {Request} req - The request object containing the updated note data and the note ID as a parameter.
+ * @param {Response} res - The response object.
+ * @return {void} Responds with a HTTP 204 No Content status upon successful update of the note, or a HTTP 404 Not Found status if the note does not exist.
+ */
 notesRouter.put('/:id', hasAuthentication, (req: Request, res: Response) => { 
   const title: string = req.body.title
   const content: string = req.body.content
@@ -66,7 +100,14 @@ notesRouter.put('/:id', hasAuthentication, (req: Request, res: Response) => {
 
 })
 
-
+/**
+ * @route PATCH /notes/:id - Endpoint to partially update a specific note by ID associated with the authenticated user.
+ * @middleware hasAuthentication - The method requires authentication.
+ * @description Partially updates a note by its ID with the provided title, content, and user, belonging to the authenticated user.
+ * @param {Request} req - The request object containing the updated note data and the note ID as a parameter.
+ * @param {Response} res - The response object.
+ * @return {void} Responds with a HTTP 204 No Content status upon successful partial update of the note, or a HTTP 404 Not Found status if the note does not exist.
+ */
 notesRouter.patch('/:id', hasAuthentication, (req: Request, res: Response) => {
 
   const id: number = parseInt(req.params.id)
@@ -90,7 +131,14 @@ notesRouter.patch('/:id', hasAuthentication, (req: Request, res: Response) => {
 
  })
 
-
+/**
+ * @route DELETE /notes/:id - Endpoint to delete a specific note by ID associated with the authenticated user.
+ * @middleware hasAuthentication - The method requires authentication.
+ * @description Deletes a note by its ID belonging to the authenticated user.
+ * @param {Request} req - The request object containing the note ID as a parameter.
+ * @param {Response} res - The response object.
+ * @return {void} Responds with a HTTP 204 No Content status upon successful deletion of the note, or a HTTP 404 Not Found status if the note does not exist.
+ */
 notesRouter.delete('/:id',  hasAuthentication,(req: Request, res: Response) => { 
 
   const id: number = parseInt(req.params.id)
