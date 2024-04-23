@@ -15,10 +15,8 @@ export const notesRouter = Router()
  *   - title: string - The title of the note.
  *   - content: string - The content of the note.
  *   - user: string - The user associated with the note.
- * 
  */
-
-notesRouter.post('/', (req: Request, res: Response) => {
+notesRouter.post('/', hasAuthentication, (req: Request, res: Response) => {
   
   const title: string = req.body.title
   const content: string = req.body.content
@@ -32,7 +30,6 @@ notesRouter.post('/', (req: Request, res: Response) => {
 
 /**
  * @route GET /notes - Endpoint to retrieve notes associated with the authenticated user.
- * @middleware hasAuthentication - The method requires authentication.
  * @description Retrieves notes belonging to the authenticated user.
  * @param {Request} req - The request object.
  * @param {Response} res - The response object.

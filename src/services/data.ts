@@ -1,13 +1,7 @@
 import * as fs from 'node:fs'
-import { Note } from '../types/notes'
+import { Note, NotesRaw } from '../types/notes'
 
-/**
- * Represents the raw data structure for storing notes.
- * to extract the notes from the raw JSON object.
- */
-type NotesRaw = {
-  notes: Note[]; // An array containing notes
-}
+
 
 
 
