@@ -1,157 +1,78 @@
-import { Request, Response, Router } from 'express'
-import { getNotes, getNoteById, addNote, updateNote, deleteNoteById } from '../services/data'
-import { Note } from '../types/notes'
-import {hasAuthentication } from '../middleware/auth'
+import * as fs from 'node:fs'
+import { Note, NotesRaw } from '../types/notes'
+import express from 'express';
 
-
-export const notesRouter = Router()
+const router = express.Router();
 /**
- * @route POST /notes - Endpoint to add a new note. 
- * @middleware hasAuthentication - The method requires authentication.
- * @description Creates a new note with the given title, content, and user from the request body.
- * @param {Request} req - The request object containing title, content, and user.
- * @param {Response} res - The resonse object.
- * @return {void} Responds with a HTTP 204 No Content status upon successful addition of the note.
- *   - title: string - The title of the note.
- *   - content: string - The content of the note.
- *   - user: string - The user associated with the note.
+ * Reads all notes from the JSON file and returns them as an array of Note objects.
+ * @returns {Note[]} Array of notes retrieved from the file.
  */
-notesRouter.post('/', hasAuthentication, (req: Request, res: Response) => {
-  
-  const title: string = req.body.title
-  const content: string = req.body.content
-  const user: string = req.body.user
-  addNote(title, content, user)
-  
-
-  res.status(204).send()
-})
-
+export function getNotes(): Note[] {
+  const notesRaw = fs.readFileSync('data/notes.json', 'utf8')
+  const notizen = JSON.parse(notesRaw) as NotesRaw
+  const array = notizen.notes
+  return array
+}
 
 /**
- * @route GET /notes - Endpoint to retrieve notes associated with the authenticated user.
- * @description Retrieves notes belonging to the authenticated user.
- * @param {Request} req - The request object.
- * @param {Response} res - The response object.
- * @return {void} Responds with a HTTP 200 OK status and an array of notes belonging to the user.
+ * Retrieves a single note by its ID.
+ * @param {number} id - The unique identifier of the note to be retrieved.
+ * @returns {Note | undefined} The note object if found, otherwise undefined.
  */
-notesRouter.get('/', hasAuthentication, (req: Request, res: Response) => {
-  const user = req.headers.authorization!
-
-  const notes: Note[] = getNotes().filter(note => note.user === user)
-
-
-  res.status(200).send(notes)
-
-
-})
+export function getNoteById(id: number): Note | undefined {
+  const notes = getNotes() 
+  const note = notes.find(note => note.id === id)
+  return note
+}
 
 /**
- * @route GET /notes/:id - Endpoint to retrieve a specific note by ID associated with the authenticated user.
- * @middleware hasAuthentication - The method requires authentication.
- * @description Retrieves a note by its ID belonging to the authenticated user.
- * @param {Request} req - The request object containing the note ID as a parameter.
- * @param {Response} res - The response object.
- * @return {void} Responds with a HTTP 200 OK status and the requested note if found, or a HTTP 404 Not Found status if the note does not exist.
+ *  Writes notes to a file in JSON format.
+ * @param {Note[]} oldNotes The array of notes to be written to the file.
  */
-notesRouter.get('/:id', hasAuthentication, (req: Request, res: Response) => {
-
-  const id: number = parseInt(req.params.id)
-  const note: Note | undefined = getNoteById(id)
- 
-  if (note === undefined) {
-    
-    res.status(404).send(`Note with ID ${id} was not found.`)
-  } else {
-   
-    res.status(200).send(note)
-  }
-
- })
+export function writeNotesToFile(oldNotes: Note[]): void { 
+  const newNotes: NotesRaw = { notes: oldNotes }
+  fs.writeFileSync('data/notes.json', JSON.stringify(newNotes))
+}
 
 /**
- * @route PUT /notes/:id - Endpoint to update a specific note by ID associated with the authenticated user.
- * @middleware hasAuthentication - The method requires authentication.
- * @description Updates a note by its ID with the provided title, content, and user, belonging to the authenticated user.
- * @param {Request} req - The request object containing the updated note data and the note ID as a parameter.
- * @param {Response} res - The response object.
- * @return {void} Responds with a HTTP 204 No Content status upon successful update of the note, or a HTTP 404 Not Found status if the note does not exist.
+ * Adds a new note with the specified title, content, and user to the existing notes array, 
+ * then writes the updated array of notes to a JSON file.
+ * @param {string} title - The title of the new note.
+ * @param {string} content - The content of the new note.
+ * @param {string} user - The user associated with the new note.
  */
-notesRouter.put('/:id', hasAuthentication, (req: Request, res: Response) => { 
-  const title: string = req.body.title
-  const content: string = req.body.content
-  const user: string = req.body.user
-  const id: number = parseInt(req.params.id)
-
-  const oldNote: Note | undefined = getNoteById(id)
-
-  if (oldNote === undefined) {
-    res.status(404).send(`Die Notiz mit ID ${id} wurde nicht gefunden.`)
-    return
-  }
-  updateNote(id, title, content, user)
-
- 
-  res.status(204).send()
-
-
-})
+export function addNote(title: string, content: string, user: string, categories: string[]): void {
+  const oldNotes = getNotes()
+  const id = oldNotes.length + 1
+  const newNote: Note = new Note(id, title, content, user, categories)
+  oldNotes.push(newNote)
+  writeNotesToFile(oldNotes)
+}
 
 /**
- * @route PATCH /notes/:id - Endpoint to partially update a specific note by ID associated with the authenticated user.
- * @middleware hasAuthentication - The method requires authentication.
- * @description Partially updates a note by its ID with the provided title, content, and user, belonging to the authenticated user.
- * @param {Request} req - The request object containing the updated note data and the note ID as a parameter.
- * @param {Response} res - The response object.
- * @return {void} Responds with a HTTP 204 No Content status upon successful partial update of the note, or a HTTP 404 Not Found status if the note does not exist.
+ * Updates an existing note with the specified ID by replacing its title, content, and user,
+ * then writes the updated array of notes to a JSON file.
+ * @param {number} id - The ID of the note to be updated.
+ * @param {string} title - The new title for the note.
+ * @param {string} content - The new content for the note.
+ * @param {string} user - The new user associated with the note.
  */
-notesRouter.patch('/:id', hasAuthentication, (req: Request, res: Response) => {
-
-  const id: number = parseInt(req.params.id)
-
-  const oldNote: Note | undefined = getNoteById(id)
-
-  if (oldNote === undefined) {
-    res.status(404).send(`Die Notiz mit ID ${id} wurde nicht gefunden.`)
-    return
-  }
-
-  const title: string = req.body.title ?? oldNote.title
-  const content: string = req.body.content ?? oldNote.content
-  const user: string = req.body.user ?? oldNote.user
-
- 
-  updateNote(id, title, content, user)
-
-
-  res.status(204).send()
-
- })
+export function updateNote(id: number, title: string, content: string, user: string, categories: string[]): void {
+  const oldNotes = getNotes()
+  const filteredNotes = oldNotes.filter(note => note.id !== id)
+  const newNote: Note = new Note(id, title, content, user, categories)
+  filteredNotes.push(newNote)
+  writeNotesToFile(filteredNotes)
+}
 
 /**
- * @route DELETE /notes/:id - Endpoint to delete a specific note by ID associated with the authenticated user.
- * @middleware hasAuthentication - The method requires authentication.
- * @description Deletes a note by its ID belonging to the authenticated user.
- * @param {Request} req - The request object containing the note ID as a parameter.
- * @param {Response} res - The response object.
- * @return {void} Responds with a HTTP 204 No Content status upon successful deletion of the note, or a HTTP 404 Not Found status if the note does not exist.
+ * Deletes the note with the specified ID from the array of notes,
+ * then writes the updated array to a JSON file.
+ * @param {number} id - The ID of the note to delete.
  */
-notesRouter.delete('/:id',  hasAuthentication,(req: Request, res: Response) => { 
-
-  const id: number = parseInt(req.params.id)
-
-  const oldNote: Note | undefined = getNoteById(id)
-
-  if (oldNote === undefined) {
-    res.status(404).send(`Die Notiz mit ID ${id} wurde nicht gefunden.`)
-    return
-  }
-
-  
-  deleteNoteById(id)
-
-
-
-  res.status(204).send()
-
-})
+export function deleteNoteById(id: number): void {
+  const oldNotes = getNotes()
+  const filteredNotes = oldNotes.filter(note => note.id !== id)
+  writeNotesToFile(filteredNotes)
+}
+export { router as notesRouter };
