@@ -1,11 +1,22 @@
 import { Request, Response, Router } from 'express'
 import { getNotes, getNoteById, addNote, updateNote, deleteNoteById } from '../services/data'
-import { Note } from '../types/notes'
+import { Note, NotesRaw } from '../types/notes'
 import { hasAuthentication } from '../middleware/auth'
 import { RequestBody } from '../types/requestBody'
-
+import * as fs from 'fs';
 
 export const notesRouter = Router()
+function getNotesByUser(authorizedUser: string): Note[] {
+  // Hier implementiere die Logik zum Abrufen der Notizen des autorisierten Benutzers
+  // Beispiel: Lies die Notizen aus der Datenbank oder einer Datei basierend auf dem autorisierten Benutzer
+  // Annahme: Die Notizen werden aus einer JSON-Datei mit dem Namen 'notes.json' gelesen
+  const notesRaw = fs.readFileSync('data/notes.json', 'utf8');
+  const notesData = JSON.parse(notesRaw) as NotesRaw;
+  const userNotes = notesData.notes.filter(note => note.user === authorizedUser);
+  return userNotes;
+};
+
+
 
 /**
  * @route POST /notes - Endpoint to add a new note.
@@ -40,13 +51,13 @@ notesRouter.post('/', hasAuthentication, (req: Request, res: Response) => {
  * @returns {void} - Responds with a HTTP 200 OK status and an array of notes belonging to the user.
  */
 notesRouter.get('/', hasAuthentication, (req: Request, res: Response) => {
-  const authorizedUser = req.headers.authorization!;
-  const userNotes = getNotesByUser(authorizedUser);
+  const authorizedUser = req.headers.authorization!; // Extrahiert den autorisierten Benutzer aus dem Anforderungskopf
 
+  const userNotes = getNotesByUser(authorizedUser); // Ruft die Notizen für den autorisierten Benutzer ab
   
-
-  res.status(200).json(userNotes);
+  res.status(200).json(userNotes); // Sendet die abgerufenen Notizen als JSON-Antwort zurück
 });
+
 
 /**
  * @route GET /notes/:id - Endpoint to retrieve a specific note by ID associated with the authenticated user.
@@ -81,13 +92,13 @@ notesRouter.get('/:id', hasAuthentication, (req: Request, res: Response) => {
  */
 notesRouter.put('/:id', hasAuthentication, (req: Request, res: Response) => { 
 
-  const {title, content, user, categories}: RequestBody = req.body
+  const {title, content, user, categories}: RequestBody = req.body;
   const authorizedUser = req.headers.authorization!;
-
-  const noteId = parseInt(req.params.id)
+  const noteId = parseInt(req.params.id);
+  const noteToUpdate = getNoteById(noteId);
   
 
-  if (authorizedUser !== user) {
+  if (!noteToUpdate || noteToUpdate.user !== authorizedUser) {
     res.status(403).send('Forbidden');
   } else {
     updateNote(noteId, title, content, user, categories); // Funktion zum Aktualisieren der Notiz
@@ -148,7 +159,5 @@ notesRouter.delete('/:id', hasAuthentication, (req: Request, res: Response) => {
   }
 });
 
-function getNotesByUser(authorizedUser: string) {
-  throw new Error('Function not implemented.')
-}
+
 
