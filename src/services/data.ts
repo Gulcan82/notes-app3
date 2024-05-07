@@ -39,12 +39,13 @@ export function writeNotesToFile(oldNotes: Note[]): void {
  * @param {string} content - The content of the new note.
  * @param {string} user - The user associated with the new note.
  */
-export function addNote(title: string, content: string, user: string, categories: string[]): void {
+export function addNote(title: string, content: string, user: string, categories: string[]): Note {
   const oldNotes = getNotes()
   const id = oldNotes.length + 1
   const newNote: Note = new Note(id, title, content, user, categories)
   oldNotes.push(newNote)
   writeNotesToFile(oldNotes)
+  return newNote
 }
 
 /**
