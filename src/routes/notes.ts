@@ -29,7 +29,7 @@ notesRouter.post('/', hasAuthentication, (req: Request, res: Response) => {
   }
 
   
-})
+});
 
 /**
  * @route GET /notes - Endpoint to retrieve notes belonging to the authenticated user.
@@ -40,12 +40,13 @@ notesRouter.post('/', hasAuthentication, (req: Request, res: Response) => {
  * @returns {void} - Responds with a HTTP 200 OK status and an array of notes belonging to the user.
  */
 notesRouter.get('/', hasAuthentication, (req: Request, res: Response) => {
-  const user = req.headers.authorization!
+  const authorizedUser = req.headers.authorization!;
+  const userNotes = getNotesByUser(authorizedUser);
 
-  const notes: Note[] = getNotes().filter(note => note.user === user)
+  
 
-  res.status(200).send(notes)
-})
+  res.status(200).json(userNotes);
+});
 
 /**
  * @route GET /notes/:id - Endpoint to retrieve a specific note by ID associated with the authenticated user.
@@ -66,7 +67,7 @@ notesRouter.get('/:id', hasAuthentication, (req: Request, res: Response) => {
   } else {
     res.status(200).send(note)
   }
-})
+});
 
 /**
  * @route PUT /notes/:id - Endpoint to update a note by ID.
@@ -81,19 +82,18 @@ notesRouter.get('/:id', hasAuthentication, (req: Request, res: Response) => {
 notesRouter.put('/:id', hasAuthentication, (req: Request, res: Response) => { 
 
   const {title, content, user, categories}: RequestBody = req.body
+  const authorizedUser = req.headers.authorization!;
 
-  const id: number = parseInt(req.params.id)
-  const oldNote: Note | undefined = getNoteById(id)
+  const noteId = parseInt(req.params.id)
+  
 
-  if (oldNote === undefined) {
-    res.status(404).send(`Die Notiz mit ID ${id} wurde nicht gefunden.`)
-    return
+  if (authorizedUser !== user) {
+    res.status(403).send('Forbidden');
+  } else {
+    updateNote(noteId, title, content, user, categories); // Funktion zum Aktualisieren der Notiz
+    res.status(200).send('Die Notiz wurde erfolgreich aktualisiert.');
   }
-
-  updateNote(id, title, content, user, categories)
-
-  res.status(204).send()
-})
+});
 
 /**
  * @route PATCH /notes/:id - Endpoint to partially update a note by ID.
@@ -122,7 +122,7 @@ notesRouter.patch('/:id', hasAuthentication, (req: Request, res: Response) => {
   updateNote(id, title, content, user, categories)
 
   res.status(204).send()
- })
+ });
 
 /**
  * @route DELETE /notes/:id
@@ -133,16 +133,22 @@ notesRouter.patch('/:id', hasAuthentication, (req: Request, res: Response) => {
  * @returns {void} If the note does not exist, returns HTTP 404 Not Found. Otherwise, returns HTTP 204 No Content on successful deletion.
  */
 notesRouter.delete('/:id', hasAuthentication, (req: Request, res: Response) => { 
+  const authorizedUser = req.headers.authorization!;
 
-  const id: number = parseInt(req.params.id)
-  const oldNote: Note | undefined = getNoteById(id)
-
-  if (oldNote === undefined) {
-    res.status(404).send(`Die Notiz mit ID ${id} wurde nicht gefunden.`)
-    return
+  const noteId = parseInt(req.params.id);
+  const noteToDelete = getNoteById(noteId);
+  
+  if (!noteToDelete) {
+    res.status(404).send('Notiz nicht gefunden.');
+  } else if (authorizedUser !== noteToDelete.user) {
+    res.status(403).send('Forbidden');
+  } else {
+    deleteNoteById(noteId); // Funktion zum Löschen der Notiz
+    res.status(200).send('Die Notiz wurde erfolgreich gelöscht.');
   }
+});
 
-  deleteNoteById(id)
+function getNotesByUser(authorizedUser: string) {
+  throw new Error('Function not implemented.')
+}
 
-  res.status(204).send()
-})
